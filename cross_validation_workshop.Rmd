@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction to cross-validation
 
 Cross-validation represents a class of powerful procedures for measuring the performance of statistical models. In cross-validation,
-a sub-sample of a data set is used to "train" a model - e.g., setting parameters - and this trained model is then used to made predictions
+a sub-sample of a data set is used to "train" a model - e.g., setting parameters - and this trained model is then used to make predictions
 in another, independent subsample of the data. By training and testing in independent data, cross-validation provides an estimate of
 the generalization performance of a model - how well it would work when applied to an entirely new data set of the same type. This 
 helps to minimize the risk of trusting an "overfitted" model which captures a particular data set unrealistically well by capitalizing on chance. This workshop will describe how cross-validation work, with real and artificial examples examined in R.
@@ -31,6 +31,7 @@ When fitting a model to a particular data set, it can be hard to tell whether th
 # load packages
 if(!require(MASS)) install.packages("MASS"); require(MASS)
 if(!require(glmnet)) install.packages("glmnet"); require(glmnet)
+if(!require(e1071)) install.packages("e1071"); require(e1071)
 ```
 
 ```{r fig.height=8, fig.width=8}
@@ -137,7 +138,7 @@ lines(fr,fv, col='red', type='l',lwd=3)
 
 ```
 
-As you can see, as the sample size increases, the overly-complex 9th-degree polynomial gradually converges on the simpler quadratic fit which better explains the data-generating process. However, while increasing one's sample size is generally desireable (all-else-equal) it is often impractical to do so beyond a certain point due to practical constraints such as time and money. How can we know whether our model is disasterously overfitting our data with the largest sample we can afford to collect? This is where cross-validation comes in.
+As you can see, as the sample size increases, the overly-complex 9th-degree polynomial gradually converges on the simpler quadratic fit which better explains the data-generating process. However, while increasing one's sample size is generally desirable (all-else-equal) it is often impractical to do so beyond a certain point due to practical constraints such as time and money. How can we know whether our model is disastrously overfitting our data with the largest sample we can afford to collect? This is where cross-validation comes in.
 
 
 ## Basic forms of cross-validation
@@ -167,7 +168,7 @@ dat <- read.csv("ratings.csv")
 rat <- as.matrix(dat[,2:14])
 rownames(rat)<-dat$name
 
-# perform split half
+# perform split-half
 # normally we'd split halves randomly, but the targets are already in an arbitrary order, so we'll just take the 1st 30 and last 30
 half1.brain <- bmeans[1:30]
 half1.ratings <- rat[1:30,]
@@ -235,7 +236,7 @@ mean(perf)
 
 We can see that the average performance is now a bit higher than it was in the split-half version. Note that the precise value of the performance here depends on the random seed. Some "unlucky" 4-fold splits might produce lower performance, while "luckier" ones might produce higher. When you have a small data set, it is often a good idea to run the analysis multiple times and average across different random seeds to get a more stable estimate. It's also very important to set the random seed at the beginning of the analysis to ensure reproducibility.
 
-So, why might performance with 4-fold cross-validation be better than with split-half? Just as we saw in our overfitting example, more data can result in more generalizeable parameters for a model. When you see that model performance improves as a function of increasing the size of the training set, this suggest that your model needs more data to achieve its most generalizeable fit. Examining the curve which relates sample size to model performance can help you do something analogous to a power analysis: choose how large of a sample you need. At a certain point, adding more data won't improve performance any more. Where this point lies will depend on numerous factors, including the signal-to-noise ratio in the data, how hetergenous/variable your data are, and how complex a model you need. Also, bear in mind that you should not compare different models assessed using different cross-validation schemes because any differences between them might result from the differences in the procedure rather than differences between the models.
+So, why might performance with 4-fold cross-validation be better than with split-half? Just as we saw in our overfitting example, more data can result in more generalizable parameters for a model. When you see that model performance improves as a function of increasing the size of the training set, this suggest that your model needs more data to achieve its most generalizable fit. Examining the curve which relates sample size to model performance can help you do something analogous to a power analysis: choose how large of a sample you need. At a certain point, adding more data won't improve performance any more. Where this point lies will depend on numerous factors, including the signal-to-noise ratio in the data, how heterpgenous/variable your data are, and how complex a model you need. Also, bear in mind that you should not compare different models assessed using different cross-validation schemes because any differences between them might result from the differences in the procedure rather than differences between the models.
 
 ### Leave-one-out cross-validation
 
@@ -243,7 +244,7 @@ Some of you may already have realized that split-half cross-validation is actual
 
 LOO has a couple of features which make it attractive. First, it maximizes the size of the training set, given the overall size of a data set. Second, it has only one unique solution: since there's only one way to leave each individual point out, there's no need for a random split of the data into k parts.
 
-However, LOO also has some drawbacks, which are less obvious but no less serious. First, LOO is slow: it requires fitting the model more times than any other scheme, and the model fitting takes longer each time because the most data possible is used. With small data sets this won't make much difference, it can be extremely important when larger data sets are considered. Second, LOO is unstable. Although it produces a unique value within a given data set, research suggests that it is counterintuivitely less replicable across data sets than k-fold with moderate k values. Third, LOO can limit the metrics you can use for assessing accuracy. For instance, calculating a correlation requires multiple points, but only a single value is predicted on each iteration of LOO. However, there are ways to circumvent this limitation, as we'll see below. Finally, LOO can lead to or exacerbate some truly bizarre performance, as we'll see in the case below:
+However, LOO also has some drawbacks, which are less obvious but no less serious. First, LOO is slow: it requires fitting the model more times than any other scheme, and the model fitting takes longer each time because the most data possible is used. With small data sets this won't make much difference, it can be extremely important when larger data sets are considered. Second, LOO is unstable. Although it produces a unique value within a given data set, research suggests that it is counterintuitively less replicable across data sets than k-fold with moderate k values. Third, LOO can limit the metrics you can use for assessing accuracy. For instance, calculating a correlation requires multiple points, but only a single value is predicted on each iteration of LOO. However, there are ways to circumvent this limitation, as we'll see below. Finally, LOO can lead to or exacerbate some truly bizarre performance, as we'll see in the case below:
 
 ```{r fig.height=6, fig.width=6}
 # Here we return to simulated rather than real data. The Xs and y here are simulated to be unrelated to each other.
@@ -266,9 +267,9 @@ for (i in 1:50){
 plot(pred,y,xlab="predicted",ylab="actual",pch=19)
 ```
 
-In the example above, we generate a model based on random normal data, with predictors (x) and one dependent variable (y). As you would expect, when you fit this model using a standard OLS regression (without cross-validation) the R-squared of the model is almost exactly 0. We should thus expect change performance (a correlation of 0) in our cross-validated version of the same analysis, right? We run that model, using a work-around to evaluate the correlation between predictions actual y-values, but observe something dramatically different. We see a large negative(!!!) correlation between predictor and predicted. Genuinely negative/below-chance performance scores are possible in cross-validation, in a process called "[anti-learning](http://www.cyberneum.de/fileadmin/user_upload/files/publications/alt_05_[0].pdf)." However, anti-learning is extremely rare in practice, and definitely not present in the current simualated data set.
+In the example above, we generate a model based on random normal data, with predictors (x) and one dependent variable (y). As you would expect, when you fit this model using a standard OLS regression (without cross-validation) the R-squared of the model is almost exactly 0. We should thus expect change performance (a correlation of 0) in our cross-validated version of the same analysis, right? We run that model, using a work-around to evaluate the correlation between predictions actual y-values, but observe something dramatically different. We see a large negative(!!!) correlation between predictor and predicted. Genuinely negative/below-chance performance scores are possible in cross-validation, in a process called "[anti-learning](http://www.cyberneum.de/fileadmin/user_upload/files/publications/alt_05_[0].pdf)." However, anti-learning is extremely rare in practice, and definitely not present in the current simulated data set.
 
-What's actually going wrong here is something more insidious. Every time you take one data point out, it shifts the mean of the sample in the opposite direction with respect to the overall sample mean. For example, in this data set the mean of the DV is ~0, so if LOO removes a point with a score of 1, then the mean will move "down" (i.e., to a more negative value). Because the sample is small, this shift is nontrivial. Since the two regressors are unrelated to the dependent variable, most of the "prediction" that happens in this model is down to the intercept of the regression. And what does that intercept model? The mean. Since the mean constantly moves away from the left-out value, LOO cross-validation is actually manufacturing a spurious negative correlation between predicted and obesrved values. The situation illustrated here is about as bad as it can be: few data points, few predictors, and zero actual correlation. However, you'll notice that it is not too dissimilar from the real data we examined above, and it is by no means unrealistic for much psych/neuro data. You can read more about this particular issue on Russ Poldrack's blog [here](http://www.russpoldrack.org/2012/12/the-perils-of-leave-one-out.html).
+What's actually going wrong here is something more insidious. Every time you take one data point out, it shifts the mean of the sample in the opposite direction with respect to the overall sample mean. For example, in this data set the mean of the DV is ~0, so if LOO removes a point with a score of 1, then the mean will move "down" (i.e., to a more negative value). Because the sample is small, this shift is nontrivial. Since the two regressors are unrelated to the dependent variable, most of the "prediction" that happens in this model is down to the intercept of the regression. And what does that intercept model? The mean. Since the mean constantly moves away from the left-out value, LOO cross-validation is actually manufacturing a spurious negative correlation between predicted and observed values. The situation illustrated here is about as bad as it can be: few data points, few predictors, and zero actual correlation. However, you'll notice that it is not too dissimilar from the real data we examined above, and it is by no means unrealistic for much psych/neuro data. You can read more about this particular issue on Russ Poldrack's blog [here](http://www.russpoldrack.org/2012/12/the-perils-of-leave-one-out.html).
 
 All-in-all, for reasons including the one above, leave-one-out cross-validation is rarely the best choice for analyzing a data set. It's often not too deleterious either, and remains generally popular, but your default cross-validation scheme should probably be something more like k=4-10 fold cross-validation.
 
@@ -278,13 +279,13 @@ Most cross-validations you'll see in the literature will consist of one of the t
 
 However, there are other, more sophisticated types of cross-validation. In fact, we've already seen one, though it probably wasn't obvious. In the analysis of neural data, we used a ridge regression. Ridge regression is very similar to standard OLS regression, but it has a regularization parameter (lambda) which is used to help deal with multi-collinearity and the curse of dimensionality. Ridge regression's lambda is an example of a "hyperparameter." Hyperparameters control how a model is fit, rather than describing its ultimate fit. For example, in ridge regression, the hyperparameter lambda influences how much the regression coefficients (regular old parameters) are "shrunk" towards zero. Unfortunately, it's hard to know what the best hyperparameters are without looking at the data. Thus, in the ridge regression examples above, we first use the "cv.glmnet" function to conduct what is known as a "grid search" - as systematic trial of different hyperparameters, to see which one works best. By work best, in this case we mean produces the smallest error in a k-fold cross-validation. Thus, those analyses are actually multi-step cross-validations in which the hyperparameters are first fit through k-fold cross-validation within the training set, and then the entire training set is used to predict the test set.
 
-Overfitting can happen at the level of model fitting or hyper parameter selection, and this is why we sometimes need multi-step cross-validation. However, overfitting can also happen at what one might call the "cognitive" or "researcher" level. That is, if I try many different models and compare their fit, choosing the better ones or tweaking them to get better performance, I may see real improvement in my model performance, but I am also liable to captialize on chance. This process is analogous to p-hacking in the null-hypothesis significance testing framework. Although cross-validation is a powerful technique, it alone cannot save us from ourselves: even cross-validated model performance is subject to this sort of "hacking". The machine learning world has come to realize this as a problem, as several papers in different fields of research have demonstrated that existing algorithms are greatly overfit to certain canonical test sets. Note that this goes beyond the normal practice of p-hacking (which is usually thought to happen within a single person or research group) to the level of an entire field. You could thus think of it as distributed p-hacking. This problem hasn't affected psychology to the same extent because everyone is out collecting their own data sets, rather than referring to a few canonical validation data sets. However, as large-scale psychology projects like Many Labs become common, we may need to think about this issue in more detail.
+Overfitting can happen at the level of model fitting or hyper parameter selection, and this is why we sometimes need multi-step cross-validation. However, overfitting can also happen at what one might call the "cognitive" or "researcher" level. That is, if I try many different models and compare their fit, choosing the better ones or tweaking them to get better performance, I may see real improvement in my model performance, but I am also liable to capitalize on chance. This process is analogous to p-hacking in the null-hypothesis significance testing framework. Although cross-validation is a powerful technique, it alone cannot save us from ourselves: even cross-validated model performance is subject to this sort of "hacking". The machine learning world has come to realize this as a problem, as several papers in different fields of research have demonstrated that existing algorithms are greatly overfit to certain canonical test sets. Note that this goes beyond the normal practice of p-hacking (which is usually thought to happen within a single person or research group) to the level of an entire field. You could thus think of it as distributed p-hacking. This problem hasn't affected psychology to the same extent because everyone is out collecting their own data sets, rather than referring to a few canonical validation data sets. However, as large-scale psychology projects like Many Labs become common, we may need to think about this issue in more detail.
 
-What can you do to protect yourself from cognitive/researcher-level overfitting? The common practice is to hold out a subsample of the data from the very beginning. With the rest of the data, you can analyze and tweak and fiddle to your heart's content (of course, using cross-validation to get more generalizeable performance estimates in each individual case). However, at the end of the day, you then run your favorite models on the as-yet untouched hold-out set. Performance in the hold-out set, rather than in the rest of the data, is thus used as a basis for inference, and no further tweaking is allowed (or at least, fully trusted).
+What can you do to protect yourself from cognitive/researcher-level overfitting? The common practice is to hold out a subsample of the data from the very beginning. With the rest of the data, you can analyze and tweak and fiddle to your heart's content (of course, using cross-validation to get more generalizable performance estimates in each individual case). However, at the end of the day, you then run your favorite models on the as-yet untouched hold-out set. Performance in the hold-out set, rather than in the rest of the data, is thus used as a basis for inference, and no further tweaking is allowed (or at least, fully trusted).
 
 #### Bi-cross-validation
 
-One particularly sophisicated form of cross-validation which is often relevant to psychologists is [bi-cross-validation](https://arxiv.org/pdf/0908.2062.pdf) for principal component analysis (PCA). PCA is a popular technique for dimensionality reduction in psychology. One of the biggest challenges in PCA is to identify the appropriate number of instrinsis/true/latent dimensions in a dataset. There many parametric and quasi-parametric approaches for selecting the PC number, ranging from the classic but often misleading Kaiser criterion, to sophisticated modern alternatives like parallel analysis and Velicer's MAP. However, virtually all of the existing techinques carry certain assumptions, which are often violated by real data. This makes cross-validation a promising solution.
+One particularly sophisticated form of cross-validation which is often relevant to psychologists is [bi-cross-validation](https://arxiv.org/pdf/0908.2062.pdf) for principal component analysis (PCA). PCA is a popular technique for dimensionality reduction in psychology. One of the biggest challenges in PCA is to identify the appropriate number of instrinsic/true/latent dimensions in a dataset. There many parametric and quasi-parametric approaches for selecting the PC number, ranging from the classic but often misleading Kaiser criterion, to sophisticated modern alternatives like parallel analysis and Velicer's MAP. However, virtually all of the existing techniques carry certain assumptions, which are often violated by real data. This makes cross-validation a promising solution.
 
 ![Schematic of bi-cross-validation.](http://alexhwilliams.info/itsneuronalblog/img/pca-crossval/bcv_holdout.png)
 
@@ -331,7 +332,7 @@ It goes without saying that there are many different types of statistical model,
 
 ### Model performance metrics
 
-There are a number of different ways of measuring model performance in the context of cross-validation. There are advantages and disadvantages to the different measures, so it's important to choose the right one for the problem at hand, or even better, examine multiple measures. The first and most important question you need to think about when choosing performance metrics is the scale level of your outcome variable. The performance measures for regression problems - in which the depenendent variable is continuous/metric - are completely non-overlapping with the metrics available for classification problems - in which the outcomes are categorical/nominal.
+There are a number of different ways of measuring model performance in the context of cross-validation. There are advantages and disadvantages to the different measures, so it's important to choose the right one for the problem at hand, or even better, examine multiple measures. The first and most important question you need to think about when choosing performance metrics is the scale level of your outcome variable. The performance measures for regression problems - in which the dependent variable is continuous/metric - are completely non-overlapping with the metrics available for classification problems - in which the outcomes are categorical/nominal.
 
 #### Regression metrics for continuous DVs
 
@@ -347,15 +348,15 @@ A completely different set of metrics are used to assess the performance of clas
 
 2. Sensitivity (aka true positive rate or recall): % of category X correctly labeled as category X
 
-3. Specificity (aka true nevative rate or selectivity): % of "not X" correctly labeled as "not X"
+3. Specificity (aka true negative rate or selectivity): % of "not X" correctly labeled as "not X"
 
 4. Positive predictive value (aka precision): % of cases labeled X that are actually X
 
 5. Negative predictive value: % of cases labeled "not X" that are actually "not X"
 
-There are several other related values, such as the false positive and negative rates (fall-out and miss rate, respectively), as well as the false discovery rate and the false omission rate. All of these metrics are related to one another, and some are fully redundant from a mathematical point of view. There's an excellent table available [here](https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Relationship) that illustrations the relations between them.
+There are several other related values, such as the false positive and negative rates (fall-out and miss rate, respectively), as well as the false discovery rate and the false omission rate. All of these metrics are related to one another, and some are fully redundant from a mathematical point of view. There's an excellent table available [here](https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Relationship) that illustrations the relations between them. Which measures you want to focus on probably depends on your research problem. For example, in practical problems such as disease-detection, it may be better to focus on sensitivity, to avoid missing any case of a disease, and on positive predictive value, to avoid over-diagnosis.
 
-For the moment, however, let's work through an example problem. This example comes from my wine research, rather than psychology/neuroscience. There are many different varieties of microorganisms that can grow in wine, some more desireable than others. The main fermentation yeast is called Saccharomyces cerevisiae (shown below), but there are many other yeast and bacteria which may help (or more usually, spoil) the winemaking process. In collaboration with my parents, I developed a chemometric approach to classifying three different species of common wine bacteria based on their Raman spectroscopy spectra (you can read more [here](http://markallenthornton.com/blog/wine-raman-classification/)).
+For the moment, however, let's work through an example problem. This example comes from my wine research, rather than psychology/neuroscience. There are many different varieties of microorganisms that can grow in wine, some more desirable than others. The main fermentation yeast is called Saccharomyces cerevisiae (shown below), but there are many other yeast and bacteria which may help (or more usually, spoil) the winemaking process. In collaboration with my parents, I developed a chemometric approach to classifying three different species of common wine bacteria based on their Raman spectroscopy spectra (you can read more [here](http://markallenthornton.com/blog/wine-raman-classification/)).
 
 ![Saccharomyces cerevisiae, the 'sugar mold,' is used to convert sugar to alcohol in wine and beer fermentation.](http://markallenthornton.com/images/sacch.jpg)
 
@@ -365,21 +366,207 @@ The example we'll consider uses data from that study. We'll use a split-half app
 # load bacteria data
 bact <- read.csv("bacteria.csv")
 
+# generate c-V indices
+set.seed(1)
+inds <- cvinds(dim(bact)[1],2)
+
+# train linear SVM on half of the data
+svmfit <- svm(bact[inds==1,2:3202],bact$genus[inds==1],kernel = "linear")
+
+# predict labels in other half of datasvm
+predvals <- predict(svmfit,bact[inds==2,2:3202])
+
+# tabulate actual vs predicted
+ta <- table(bact$genus[inds==2],predvals)
+ta
+```
+
+The table you see above reflects the performance of the classifier. All of the specific indices of model performance mentioned earlier can be calculated by summing and dividing by various components of this table. Let's see how!
+
+```{r}
+# 1. accuracy: diagonal over total
+sum(diag(ta))/sum(ta)
+
+# 2. sensitivity: diagonal over row totals
+diag(ta)/rowSums(ta)
+
+# 3. specificity:
+(sum(ta)-(rowSums(ta)+colSums(ta)-diag(ta)))/(sum(ta)-rowSums(ta))
+
+# 4. positive predictive value: diagonal over column totals
+diag(ta)/colSums(ta)
+
+# 5. negative predictive value:
+(sum(ta)-(rowSums(ta)+colSums(ta)-diag(ta)))/(sum(ta)-colSums(ta))
 
 ```
 
+As you can see, accuracy requires counting all true positive and true negatives, and thus can only be calculated with respect to the full classification problem. In contrast, the other measures we detailed can each be calculated separately for each condition. Note that there is considerable variation in these performance metrics, both across the different bacteria and across the different metrics.
+
+It's also worth noting that the performance here is worse than what we report in the published paper. This is because we're simplifying the problem by assuming each genus of bacteria is homogeneous. In reality, each is composed of several many different strains. Sometimes there's more variance between strains within a genus, than between different genuses, in terms of Raman spectra. Thus in the paper we did better at the genus level by leveraging information at the strain level.
+
 ### Model comparison
 
-How can we tell whether one model is better than another? This is a crucial question, since incremental improvement in science requires us to pit competing models against one another. There are a number of statistics for model comparison which you might be familiar with from more traditional data analyses. These include R-squared and adjusted R-squared, Akaike's Information Criterion (AIC) and Bayesian Information Criterion (BIC), and likelihood ratio tests. These statistics are useful, and arguably underused, but they have a number of disadvantages relative to cross-validated model performance measures.
+How can we tell whether one model is better than another? This is a crucial question, since incremental improvement in science requires us to pit competing models against one another. There are a number of statistics for model comparison which you might be familiar with from more traditional data analyses. These include R-squared and adjusted R-squared, Akaike's Information Criterion (AIC) and Bayesian Information Criterion (BIC), and likelihood ratio tests. These statistics are useful, and arguably underused, but they have a number of disadvantages relative to cross-validated model performance measures. Some, like (unadjusted) R-squared, don't properly adjust for model complexity. For example, in a multiple regression, the R-squared will continue to rise monotonically as you add more predictors, even if those predictors are just random noise. Other model comparison statistics can only be computed in very specific situations. For instance, likelihood ratio tests can only compare nested models. More generally, most statistics - even AIC and BIC - have more extensive assumptions built into them than cross-validation. This makes cross-validation an exceptionally widely applicable way to compare models.
 
-1. 
+Let's return to our person perception fMRI data to conduct some model comparison. Below we'll use 5-fold cross-validation to compare two models of person perception: the stereotype content model (warmth and competence) and the agency and experience model of mind perception.
 
-### Model selection
+```{r}
+# create indices
+set.seed(1)
+k <- 5
+inds <- cvinds(60,k)
+
+# loop through folds
+perf <- matrix(NA,k,2)
+colnames(perf)<-c("scm","a&e")
+for (i in 1:k){
+  # slice folds
+  sel <- inds==i
+  y <- bmeans[!sel]
+  # fit and evaluate scm
+  x <- rat[!sel,c(13,4)]
+  fit <- lm(y~x)
+  x <- rat[sel,c(13,4)]
+  pred <- predict(fit,data.frame(x))
+  perf[i,1]<-sqrt(mean((pred-bmeans[sel])^2))
+  # fit and evaluate a&e
+  x <- rat[!sel,c(1,7)]
+  fit <- lm(y~x)
+  x <- rat[sel,c(1,7)]
+  pred <- predict(fit,data.frame(x))
+  perf[i,2]<-sqrt(mean((pred-bmeans[sel])^2))
+}
+colMeans(perf)
+
+```
+
+As you can see, the perform of the stereotype content model (scm) is slightly better than the perform of the agency and experience model (a&e). Remember that we are looking at RMSE here, and lower error mean better performance. This is as simple as model comparison gets with cross-validation. However, by iterating over this simple operation, you can also perform more complicated tasks like model selection. For example, we could compare every possible combination of the trait dimensions in the current data set to choose the best one (a more modern way to do this might be through LASSO regression). Such model selection can have a dramatic effect on the performance of predictive models. However, it is important to remember to always separate your test and training set. In the case of model selection, simply considering so many models can bias estimates of the best model's performance. Thus a subset of the data should be held out to get an unbiased estimates of how well the best model performs.
 
 ### Null hypothesis significance testing
 
-### Null models and noise ceilings
+You might have noticed in the previous section that the numerical difference between the performances of the two models was very small - less than 0.02. How can we know whether such a difference is meaningful? One response might be to ask how we know that any statistical difference is important? There are multiple ways of assessing such a thing, ranging from standardized effect size measures, to implications for real world problems. In psychology and neuroscience, you may often be asked to put a p-value on things before people believe it. Doing so is not always particularly helpful, but it is possible. How? Let's start with what not to do:
 
-## Specific generalization: cross-validation across boundaries
+#### 1. Do not treat "folds" of a cross-validation as independent!
+
+It might be tempting to treat each "fold" in a cross-validation procedure as an independent estimate, and do something like a t-test on performance across folds. Unfortunately, this procedure is fundamentally flawed because the folds are not independent. Sure, the tests sets are each independent of the other test sets. However, the training sets are all highly overlapping with all of the other training sets! As a result, applying a parametric test across folds violates the independence assumption common to most such tests, and will yield very misleading p-values. It's also worth pointing out that the number of folds is something the analyst chooses, but it would determine the degrees of freedom of a parametric test across folds. There is something deeply wrong with any procedure that allows the analyst to manufacture their own degrees of freedom in this way.
+
+#### 2. Do not perform binomial tests on cross-validated accuracy!
+
+I sometimes see people reason along the following lines: accuracy for classification is a binary value - right or wrong. Therefore, I can apply a binomial test to cross-validated accuracies to get p-values associated with a certain set of predictions. This obviously a non-starter when one is working with regression rather than classification, but it is also problematic for classification. Again, the reason is a violation of the independence assumption. If you did a single split-half, and then computed a binomial test on the accuracy in the test half, this would not be too wrong (though less than ideal, in multiclass cases). However, if one then completed the "cross" in cross-validation (reversing the training and testing halves) to generate predictions for the first half, and then computed a binomial test across ALL observations, this would again violate the independence assumption of the test, for the same reason as #1.
+
+#### NHST with cross-validation: Permutation testing
+
+The most common way to obtain valid p-values with cross-validation is through permutation testing. First, one computes the actual performance of the model, on whatever metric one chooses. Next, one repeatedly re-computes this model performance statistic on randomized data. There are multiple possible permutation schemes, but one of the simplest is shown below: shuffling the DV (numeric outcome/labels) with respect to the entire predictor matrix. In this case, we will return to the question of whether the two model of person perception examined above perform significantly differently from each other.
+
+```{r}
+orig.perf <- colMeans(perf)
+perfdiff <- orig.perf[2]-orig.perf[1]
+
+# here we perform the permutation
+# note that most of the code is the same as in the original case
+# however, we wrap the innner k-fold in an outer permutation loop
+set.seed(1)
+nperf <- 1000
+permperfdiff <- rep(NA,nperf)
+for (p in 1:nperf){
+  pbmeans <- sample(bmeans)
+  perf <- matrix(NA,k,2)
+  for (i in 1:k){
+    # slice folds
+    sel <- inds==i
+    y <- pbmeans[!sel]
+    # fit and evaluate scm
+    x <- rat[!sel,c(13,4)]
+    fit <- lm(y~x)
+    x <- rat[sel,c(13,4)]
+    pred <- predict(fit,data.frame(x))
+    perf[i,1]<-sqrt(mean((pred-pbmeans[sel])^2))
+    # fit and evaluate a&e
+    x <- rat[!sel,c(1,7)]
+    fit <- lm(y~x)
+    x <- rat[sel,c(1,7)]
+    pred <- predict(fit,data.frame(x))
+    perf[i,2]<-sqrt(mean((pred-pbmeans[sel])^2))
+  }
+  permperfdiff[p]<-colMeans(perf)[2]-colMeans(perf)[1]
+}
+hist(permperfdiff,20,col="grey80",title="Distribution of permuted performance")
+abline(v=perfdiff,col="red",lwd=2)
+mean(abs(permperfdiff)>perfdiff)
+```
+Above you can see the results of the permutation test. The grey histogram illustrates the empirical null distribution. Even if you're not interested in statistical significance, it can be helpful to generate such a null distribution to ensure there's nothing wrong with your code that's allowing your model to perform above chance on random data. The red line indicates the difference in model performance we actually observed. Since we want a 2-sided test, we take the absolute value of the permutation distribution, and then calculate the fraction of those values that are greater than the unpermuted effect. In this case, that corresponds to p = .004, indicating that the stereotype content model significantly outperformed the agency and experience model in predicting overall social brain network activation to mentalizing about different famous people.
+
+In this analysis, and all previous analyses of the person perception data, we have been conducting what amounts to an item-analysis. That is, we have collapsed across participants (via averaging) prior to fitting and evaluating our models. Thus, the p-value reported above indicates a fixed effect analysis with respect to participant: we cannot necessarily expect this same result in a new sample, unless there are no meaningful individual differences in social perception (a possibility which seems rather unlikely, a priori). To obtain random effects p-values, you might imagine that you could perform this cross-validated model comparison separately in each participant, and then compare the difference to 0 across participants using a t-test. Unfortunately, this intuitive solution also yields a fixed effect analysis with respect to participants. Even performing the permutation testing within each participant is not enough - the results of individual subject permutation have to be combined using a second-level bootstrapping procedure to obtain something akin to a random effects p-value. The details are beyond the present workshop, but you can read more [here](https://arxiv.org/abs/1512.00810).
+
+## Specific generalization: validation across boundaries
+
+Cross-validation is all about measuring the generalizable performance of predictive models. However, just what are we generalizing over? That depends on how one structures the validation process. Validating model performance across various different boundaries in your data set can prove highly informative with respect to just how generalizable your results really are, and with respect to what.
+
+Let's consider the person perception data we've been working with so far. At the beginning, we actually loaded in data from 29 different participants. However, as discussed in the last paragraph, ever since we've been working with data which was collapsed with respect to participant. Here we will undo that, and work with the full data set. Doing so allows us to do something really interesting: examine how well a model generalizes across participants, across famous target people, or across neither. We'll keep things simple by examining just one model: in this case, the stereotype content model, since it "won" the model comparison in the previous section. We'll also keep things simple by just doing a single split-half, rather than a more complex k-fold.
+
+```{r}
+
+# "stack" the dataset into long form
+allbrains <- as.numeric(as.matrix(bdat))
+nobs <- length(allbrains)
+scm <- matrix(rat[,c(13,4)],nobs,2)
+
+# define train/test function
+tteval <- function(x,y,inds){
+  yc <- y[inds]
+  xc <- x[inds,]
+  fit <- lm(yc~xc)
+  xc <- x[!inds,]
+  predvals <- predict(fit,data.frame(xc))
+  perfc <- rep(NA,2)
+  perfc[1] <- cor(predvals,y[!inds])
+  yc <- y[!inds]
+  fit <- lm(yc~xc)
+  xc <- x[inds,]
+  predvals <- predict(fit,data.frame(xc))
+  perfc[2] <- cor(predvals,y[inds])
+  return(mean(perfc))
+}
+
+# we'll loop several different split-halves, and average across them, to get more stable estimates
+set.seed(1)
+ns <- 100
+perf <- matrix(NA,ns,3)
+colnames(perf)<-c("all","part","targ")
+for (i in 1:ns){
+  # 1st, a generic split-half that doesn't use any participant/target info
+  sp.all <- cvinds(nobs,2)==1
+  perf[i,1] <- tteval(scm,allbrains,sp.all)
+  # 2nd, we need a split-half of participants
+  sp.part <- rep(sample(rep(c(T,F),15))[1:29],each=60)
+  perf[i,2] <-tteval(scm,allbrains,sp.part)
+  # 3rd, a split-half by target person
+  sp.targ <- rep(sample(rep(c(T,F),30)),29)
+  perf[i,3] <-tteval(scm,allbrains,sp.targ)
+  # we'll start with the random split-half
+}
+colMeans(perf)
 
 
+```
+
+There are a few things you might notice about these results. One is that all of the values are much smaller in magnitude than those we saw when working with the same data earlier in the workshop. This is interesting, but not really directly related to cross-validation. It's an effect of correlation attenuation: the less reliable your measures, the lower the meaningful correlation you can expect to observe between them. Earlier we were working with data that averaged across participants, and that averaging boosted the reliability of the resulting composite (just like averaging items in a scale). However, when we returned to the individual participant level in this example, our performance took an (apparent) hit as a result.
+
+The more relevant thing you might notice about these data is that the performances for the participant-respecting split-half, and the target-respecting split-half, are substantially lower than the performance of the fully random split-half across all of the data. Why might this be the case? In each case the training model had access to the same raw quantity of data (i.e., half of it), so this has to be about data quality instead. In the "all" cross-validation, the training data contained information about all participants and all target people, so it really only had to generalize to new data within these conditions. In contrast, the "part" cross-validation training model knew about all target people, but only half of the participants, so it had to generalize to a new sample of participants from the same population. Since these participants were not perfectly identical to those in training set, the model suffered as a result. Similarly, in the "targ" cross-validation, the training model knew about all participants, but only about half of the target people. Again, the training and test sets were sufficiently similar to permit some generalization, but only with a reduction in predictive performance.
+
+We can see that both of these "boundaries" in the data - participant and target person - reduced the performance of the model substantially: more than half relative to the completely random split-half. If we wanted to, we could also combine these two boundaries, forcing the model to generalize across both participants and targets. This would require a different cross-validation scheme, because two non-overlapping halves of the data would produce 1/4th for each training and test set, and so we shouldn't compare with these split-half cases. I'll leave that as an exercise to the reader, but as you might imagine, it would probably reduce performance even further.
+
+### Substitute for mixed effects
+
+As we've seen, cross-validating across boundaries allows us to precisely estimate how well our model generalizes to new data (along various dimensions of "newness"). In doing so, we can see how cross-validation may prove a useful substitute or complement for mixed effects modeling. Mixed effects modeling has become more popular in psychology recently, because it improves both type I and II error rates in within-subjects designs where the trials/stimuli/grouping variables are sampled from a population (e.g., a subset of verbs standing in for all verbs, or a set of participants grouped into different schools in an educational setting).
+
+As useful as mixed effects models can be, they can also be very difficult to estimate. Maximum likelihood (and ReML) estimates often produces convergence failure for complex models. Bayesian models can sometimes get around these issues, but are still extremely computationally intensive to estimate, making them impractical for some applications. Moreover, coaxing a model to fit in either frequentist or Bayesian frameworks can be more an art than a science, and introduce many researcher degrees of freedom. Moreover, many statisticians argue that, to get the full value out of mixed effects models, we need to fit "maximal models" where all possible random effects (including random slopes) are fit. This compounds all of these problems, by making estimation slower and more likely to fail.
+
+Cross-validation can also be computationally intensive, but it is often less-so than mixed effects estimation. By cross-validating across boundaries, we can directly measure generalization performance, rather than seeking out the theoretical promise of random effects p-values (or Bayesian equivalents) from mixed effects models. Moreover, using cross-validation allows us to focus more on effect size and meaningful levels of out-of-sample prediction, rather than p-values, with all of their attendant problems.
+
+### Thinking about replication
+
+Cross-validation across boundaries is also a useful way to think about replication. The ongoing science reform movement has raised serious questions about the replicability of psychological science. Attempts at replicating classic effects have frequently "failed" in recent years, in that they have not produced significant results in the same direction. This has in turn led some to question how useful "conceptual replications" are in establishing the robustness of an effect. Part of the problem here is that there are no strict definitions for direct or conceptual replication, or all of the shades in-between. As a result, researchers whose work has failed to replicate have often claimed (sometimes with good reason) that replication attempts have not been sufficiently close. Reformers have countered (again, quite often reasonably) that this creates an impossible standard of evidence for replicators to falsify a published effect. 
+
+Cross-validation across boundaries (or not) can be helpful for thinking about replication in more precise terms than we usually do. At one extreme, you can think of fully random cross-validation (like in the "all" scheme above) as about the most direct replication possible: same participants, same stimuli, with only the trials differing (in a partially-crossed manner between training and test). If a model fails to generalize across this (lack of) boundary, it's truly hopeless. Observing generalization across more boundaries justifies increasingly strong claims. For example, cross-validating across halves of participants is pretty close to what most psychologists currently mean by a "direct replication": the same task/stimuli in a different group of participants from the same population. The "targ" cross-validation is something analogous which is less commonly attempted: a replication in the same group of participants, but with different stimuli. Ideally, our finding should generalize across both participants and stimuli simultaneously. Depending on how liberally we use the term stimuli (i.e., whether the task itself could be considered a stimulus drawn from a population of possible tasks) at this extreme we start to approach what psychologists typically call "conceptual replication." In this way, cross-validation gives us a natural way to think about the increasingly general claims our finding might justify, based on predictive perform across different boundaries in the data.
