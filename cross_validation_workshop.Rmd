@@ -36,7 +36,7 @@ if(!require(e1071)) install.packages("e1071"); require(e1071)
 
 ```{r fig.height=8, fig.width=8}
 
-# simulate data with quadtratic relationship
+# simulate data with quadratic relationship
 set.seed(1)
 x <- runif(20)-.5
 y <- x^2 + rnorm(20,0,.05)
@@ -209,8 +209,8 @@ The k-fold scheme is a form of cross-validation which is often preferable to spl
 k-fold cross-validation has the advantage of using more of the total data set as training. How much depends on what value we choose for k, with larger k values meaning more training data: training data is (k-1)/k of the total data. There are a lot of papers discussing ideal values for k, and how to choose them based on factors such as the number of observations in your data, and how long your model takes to train. That's beyond the scope of today's tutorial, but in most cases you'll probably do pretty well setting a k somewhere between 4 and 10. Let's repeat the analysis above using 4-fold cross-validation instead of split-half.
 
 ```{r}
-# There are probably dozens of existing functions in existing R packages that allow you to define indexes for cross-validation.
-# I create this one from scratch so that you can see the basicaly principal.
+# There are probably dozens of existing functions in existing R packages that allow you to define indics for cross-validation.
+# I create this one from scratch so that you can see the basic principle.
 cvinds = function(n,k){
   inds <- rep(1:k,ceiling(n/k))
   inds <- sample(inds)[1:n]
@@ -366,7 +366,7 @@ The example we'll consider uses data from that study. We'll use a split-half app
 # load bacteria data
 bact <- read.csv("bacteria.csv")
 
-# generate c-V indices
+# generate C-V indices
 set.seed(1)
 inds <- cvinds(dim(bact)[1],2)
 
@@ -496,6 +496,8 @@ abline(v=perfdiff,col="red",lwd=2)
 mean(abs(permperfdiff)>perfdiff)
 ```
 Above you can see the results of the permutation test. The grey histogram illustrates the empirical null distribution. Even if you're not interested in statistical significance, it can be helpful to generate such a null distribution to ensure there's nothing wrong with your code that's allowing your model to perform above chance on random data. The red line indicates the difference in model performance we actually observed. Since we want a 2-sided test, we take the absolute value of the permutation distribution, and then calculate the fraction of those values that are greater than the unpermuted effect. In this case, that corresponds to p = .004, indicating that the stereotype content model significantly outperformed the agency and experience model in predicting overall social brain network activation to mentalizing about different famous people.
+
+You might be wandering how many permutations you need to run. This depends on two factors: how precisely you need to estimate your p-values, and how much time it takes to run a permutation. Typically numbers include 1000, 5000, and 5000. However, if you need to estimate very small p-values precisely, then you made need to run more. Running as many as you have time for (however you define that) is not bad rule of thumb.
 
 In this analysis, and all previous analyses of the person perception data, we have been conducting what amounts to an item-analysis. That is, we have collapsed across participants (via averaging) prior to fitting and evaluating our models. Thus, the p-value reported above indicates a fixed effect analysis with respect to participant: we cannot necessarily expect this same result in a new sample, unless there are no meaningful individual differences in social perception (a possibility which seems rather unlikely, a priori). To obtain random effects p-values, you might imagine that you could perform this cross-validated model comparison separately in each participant, and then compare the difference to 0 across participants using a t-test. Unfortunately, this intuitive solution also yields a fixed effect analysis with respect to participants. Even performing the permutation testing within each participant is not enough - the results of individual subject permutation have to be combined using a second-level bootstrapping procedure to obtain something akin to a random effects p-value. The details are beyond the present workshop, but you can read more [here](https://arxiv.org/abs/1512.00810).
 
